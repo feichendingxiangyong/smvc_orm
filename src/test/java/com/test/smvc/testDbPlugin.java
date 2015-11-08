@@ -15,7 +15,7 @@ public class testDbPlugin {
 
 	
 	@Test
-	public void add()
+	public void add() throws IllegalArgumentException, IllegalAccessException
 	{
 		DbPlugin<Student> dao = new DbPlugin<Student>();
 		Student stu=new Student("martin", "121", "TaiWan");
@@ -31,7 +31,8 @@ public class testDbPlugin {
 		Assert.assertTrue(students.isEmpty());
 		
 		//insert
-        dao.save(stu);
+        //int affectedRows = dao.save(stu);
+        long id = dao.saveWithGeneratedKeys(stu);
         
         List<Student> students2 = dao.queryList(Student.class, param);
         
