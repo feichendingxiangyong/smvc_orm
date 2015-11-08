@@ -1,11 +1,5 @@
 package com.smvc.dao.annotation;
 
-/**
- * MyBeanProcessor.java 6:10:37 PM Jan 31, 2012
- *
- * Copyright(c) 2000-2012 HC360.COM, All Rights Reserved.
- */
-
 import java.beans.PropertyDescriptor;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -20,14 +14,14 @@ import org.apache.commons.dbutils.BeanProcessor;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * 数据库字段转换成bean属性的特殊处理
+ * Define the convert role of pojo fields name to db table fields name.
  * 
  * @author dixingxing
  * @date Jan 31, 2012
  */
 public class MyBeanProcessor extends BeanProcessor {
     /**
-     * 数据库列名 -> java属性名
+     * db feild name -> pojo field name
      * 
      * @param column
      * @return
@@ -43,10 +37,10 @@ public class MyBeanProcessor extends BeanProcessor {
     }
 
     /**
-     * java属性 -> 数据库列名
+     * pojo field name -> db feild name
      * 
      * @param prop
-     *            命名规则为驼峰命名法，不支持连续两个大写字母
+     *            The rule is CamelCase, example: studentName -> student_name
      * @return
      */
     public static String prop2column(String prop) {
@@ -129,7 +123,7 @@ public class MyBeanProcessor extends BeanProcessor {
         } else if (propType.equals(Timestamp.class)) {
             return rs.getTimestamp(index);
         }
-        // 增加date类型
+        
         else if (propType.equals(Date.class)) {
             return new Date(rs.getTimestamp(index).getTime());
         } else {

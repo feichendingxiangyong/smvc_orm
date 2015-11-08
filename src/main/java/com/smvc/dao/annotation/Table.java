@@ -11,10 +11,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * ����po��Ӧ���ݿ�ı���
+ * Be used to identify this pojo mapped to which table.
  * 
- * @author dixingxing
- * @date Feb 6, 2012
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

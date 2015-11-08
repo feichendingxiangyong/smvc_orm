@@ -11,6 +11,11 @@ public class Grade {
     private int id;
     
     /**
+     * student's id
+     */
+    private int studentId;
+    
+    /**
      * 课程名称
      */
     private String className;
@@ -19,6 +24,25 @@ public class Grade {
      * 成绩
      */
     private int score;
+
+    public Grade(int id, int studentId, String className, int score) {
+        super();
+        this.id = id;
+        this.studentId = studentId;
+        this.className = className;
+        this.score = score;
+    }
+
+    public Grade(int studentId, String className, int score) {
+        super();
+        this.studentId = studentId;
+        this.className = className;
+        this.score = score;
+    }
+
+    public Grade() {
+        super();
+    }
 
     public int getId() {
         return id;
@@ -43,6 +67,15 @@ public class Grade {
     public void setScore(int score) {
         this.score = score;
     }
+
+    public int getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(int studentId) {
+        this.studentId = studentId;
+    }
+    
     
     
 }

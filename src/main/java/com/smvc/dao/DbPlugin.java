@@ -1,8 +1,4 @@
-/**
- * BaseDao.java 7:24:12 PM Jan 17, 2012
- *
- * Copyright(c) 2000-2012 HC360.COM, All Rights Reserved.
- */
+
 package com.smvc.dao;
 
 import java.lang.reflect.Field;
@@ -33,10 +29,8 @@ import com.smvc.dao.annotation.SqlHolder;
 import com.smvc.dao.util.ClassUtil;
 
 /**
- * dbutils dao 基类
+ * Base dao
  * 
- * @author dixingxing
- * @date Jan 17, 2012
  */
 public class DbPlugin<T> {
     private final static Logger logger = Logger.getLogger(DbPlugin.class);
@@ -50,7 +44,7 @@ public class DbPlugin<T> {
     }
 
     /**
-     * 初始化dhcp数据源
+     * init dhcp data source
      * 
      * @return
      */
@@ -79,7 +73,7 @@ public class DbPlugin<T> {
 
     /**
      * 
-     * 使用自定义的 MyBeanProcessor
+     * Use handler of MyBeanProcessor
      * 
      * @see MyBeanProcessor
      * @param clazz
@@ -90,7 +84,7 @@ public class DbPlugin<T> {
     }
 
     /**
-     * 使用自定义的 MyBeanProcessor
+     * Use handler of MyBeanProcessor
      * 
      * @see MyBeanProcessor
      * @param clazz
@@ -101,7 +95,7 @@ public class DbPlugin<T> {
     }
 
     /**
-     * 从默认的数据源中获取一个数据库连接
+     * Get one connection
      * 
      * @return
      */
@@ -109,13 +103,13 @@ public class DbPlugin<T> {
         try {
             return ds.getConnection();
         } catch (Exception e) {
-            logger.error("获取数据库连接失败!", e);
+            logger.error("Get db connecttion failed!", e);
             return null;
         }
     }
 
     /**
-     * 打印日志
+     * print sql
      * 
      * @param sql
      */
@@ -127,7 +121,7 @@ public class DbPlugin<T> {
 
     /**
      * 
-     * 查询返回列表
+     * query list 
      * 
      * @param sql
      * @param clazz
@@ -138,10 +132,23 @@ public class DbPlugin<T> {
         SqlHolder holder = SqlBuilder.buildQuery(clazz, param);
         return this.queryList(holder.getSql(), clazz, holder.getParams());
     }
+    
+    /**
+     * 
+     * query all of rows with returning list
+     * 
+     * @param sql
+     * @param clazz
+     * @param params
+     * @return
+     */
+    public List<T> queryAllList(Class<T> clazz) {
+        return this.queryList(clazz, null);
+    }
 
     /**
      * 
-     * 查询返回列表
+     * query rows with returning list
      * 
      * @param sql
      * @param clazz
@@ -153,13 +160,13 @@ public class DbPlugin<T> {
         try {
             return (List<T>) runner.query(sql, getBeanListHandler(clazz), params);
         } catch (SQLException e) {
-            logger.debug("查询失败", e);
+            logger.debug("query failed.", e);
             return new ArrayList<T>();
         }
     }
 
     /**
-     * 查询返回单个对象
+     * query one object
      * 
      * @param sql
      * @param clazz
@@ -178,7 +185,7 @@ public class DbPlugin<T> {
     }
 
     /**
-     * 返回long型数据
+     * query long
      * 
      * @param sql
      * @param params
@@ -195,9 +202,30 @@ public class DbPlugin<T> {
         }
     }
 
+    /**
+     * Save one object
+     * @param obj
+     * @return
+     */
     public int save(Object obj) {
         SqlHolder holder = SqlBuilder.buildInsert(obj);
         return this.update(DbPlugin.getConn(), holder.getSql(), holder.getParams());
+    }
+    
+    /**
+     * Save a list of objects
+     * @param obj 
+     * @return
+     */
+    public <T> int[] saveList(List<T> objs) {
+        SqlHolder holder = SqlBuilder.buildInsertList(objs);
+        Object[][] params = new Object[holder.getParams().length][];
+        int index = 0;
+        for (Object item : holder.getParams())
+        {
+            params[index ++] = (Object[])item;
+        }
+        return this.insertList(DbPlugin.getConn(), holder.getSql(), params);
     }
 
     public long saveWithGeneratedKeys(Object obj) throws IllegalArgumentException, IllegalAccessException {
@@ -222,7 +250,7 @@ public class DbPlugin<T> {
         return generatedKey;
     }
 
-    public int delete(Class<?> clazz, String where) {
+    public int delete(Class<T> clazz, String where) {
         SqlHolder holder = SqlBuilder.buildDelete(clazz, where);
         return this.update(DbPlugin.getConn(), holder.getSql(), holder.getParams());
     }
@@ -230,6 +258,10 @@ public class DbPlugin<T> {
     public int delete(Class<?> clazz, Parameter param) {
         SqlHolder holder = SqlBuilder.buildDelete(clazz, param);
         return this.update(DbPlugin.getConn(), holder.getSql(), holder.getParams());
+    }
+    
+    public <T> int deleteAll(Class<T> clazz) {
+        return delete(clazz, null);
     }
 
     public int update(Object obj, String where) {
@@ -243,7 +275,7 @@ public class DbPlugin<T> {
     }
 
     /**
-     * 执行INSERT/UPDATE/DELETE语句
+     * execute INSERT/UPDATE/DELETE 
      * 
      * @param conn
      * @param sql
@@ -256,13 +288,13 @@ public class DbPlugin<T> {
 
             return runner.update(conn, sql, params);
         } catch (SQLException e) {
-            logger.debug("更新操作失败", e);
+            logger.debug("update failed!", e);
             return 0;
         }
     }
 
     /**
-     * 执行INSERT语句
+     * execute INSERT
      * 
      * @param conn
      * @param sql
@@ -274,14 +306,32 @@ public class DbPlugin<T> {
         try {
             return runner.insert(conn, sql, new ScalarHandler<Long>(), params);
         } catch (SQLException e) {
-            logger.debug("更新操作失败", e);
+            logger.debug("update failed!", e);
             return new Long(0);
         }
     }
 
     /**
+     * execute INSERT
      * 
-     * 查询列表
+     * @param conn
+     * @param sql
+     * @param params
+     * @return
+     */
+    private int[] insertList(Connection conn, String sql, Object[][] params) {
+        showSql(sql);
+        try {
+            return runner.batch(conn, sql, params);
+        } catch (SQLException e) {
+            logger.debug("update failed!", e);
+            return new int[0];
+        }
+    }
+    
+    /**
+     * 
+     * query list
      * 
      * @param sql
      * @return Map<String, Object>
@@ -292,7 +342,7 @@ public class DbPlugin<T> {
             List<Map<String, Object>> results = (List<Map<String, Object>>) runner.query(sql, new MapListHandler());
             return results;
         } catch (SQLException e) {
-            logger.error("查询失败", e);
+            logger.error("query failed!", e);
             return new ArrayList<Map<String, Object>>();
         }
     }

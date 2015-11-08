@@ -1,11 +1,16 @@
 package com.smvc.dao.annotation;
 
+/**
+ * Query parameter
+ * @author Big Martin
+ *
+ */
 public class Parameter {
     private String columnName;
     private Object value;
     
     /**
-     * 链表结构
+     * link structure
      */
     private Parameter next = null;
 
@@ -17,7 +22,7 @@ public class Parameter {
     }
 
     /**
-     * 增加下一个节点
+     * add next query node
      * @param columnName
      * @param value
      * @return
@@ -35,7 +40,7 @@ public class Parameter {
     }
     
     /**
-     * 增加下一个节点
+     * get next query node
      * @param columnName
      * @param value
      * @return

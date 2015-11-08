@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.smvc.dao.annotation.GeneratedKeys;
 import com.smvc.dao.annotation.Table;
+import com.smvc.dao.annotation.Transient;
 
 @Table(name = "student")
 public class Student {
@@ -14,7 +15,8 @@ public class Student {
     private String password;
     private String school;
     
-    //private List<Grade> grades;
+    @Transient
+    private List<Grade> grades;
 
     public String getName() {
         return name;

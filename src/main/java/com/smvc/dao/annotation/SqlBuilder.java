@@ -1,30 +1,24 @@
 package com.smvc.dao.annotation;
 
-/**
- *
- * Copyright(c) 2000-2012 HC360.COM, All Rights Reserved.
- */
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
- * 根据pojo构造SqlHolder
+ * Build SqlHolder with object
  * 
- * @see SqlHolder
- * @author dixingxing
- * @date Feb 6, 2012
  */
 public class SqlBuilder {
     private final static Logger logger = Logger.getLogger(SqlBuilder.class);
 
     /**
-     * 构造insert
+     * build sqlHolder of inserting an object
      * 
      * @param po
      * @return
@@ -59,11 +53,59 @@ public class SqlBuilder {
     }
 
     /**
-     * 构造update
+     * build sqlHolder of inserting a list of objects. Note: the class of
+     * objects must be same!
+     * 
+     * @param po
+     * @return SqlHolder
+     */
+    public static <T> SqlHolder buildInsertList(List<T> pos) {
+        SqlHolder holder = new SqlHolder();
+        Field[] fields = pos.get(0).getClass().getDeclaredFields();
+
+        StringBuilder columns = new StringBuilder();
+        StringBuilder values = new StringBuilder();
+
+        // build columns' sql
+        for (Field f : fields) {
+            if (isTransient(f)) {
+                continue;
+            }
+            columns.append(columnName(f)).append(",");
+            values.append("?").append(",");
+
+        }
+        deleteLastComma(columns);
+        deleteLastComma(values);
+
+        // build params
+        List<Object> tempParams = new ArrayList<Object>();
+        for (Object po : pos) {
+            tempParams.clear();
+            for (Field f : fields) {
+                if (isTransient(f)) {
+                    continue;
+                }
+                tempParams.add(convert(getValue(po, f)));
+            }
+            holder.addParam(tempParams.toArray());
+        }
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("INSERT INTO ").append(tableName(pos.get(0))).append(" (");
+        sql.append(columns).append(") ");
+        sql.append(" VALUES(").append(values).append(") ");
+        holder.setSql(sql.toString());
+        logger.debug(holder);
+        return holder;
+
+    }
+
+    /**
+     * build update sql
      * 
      * @param obj
      * @param where
-     *            不允许为空
      * @return
      */
     public static SqlHolder buildUpdate(Object obj, String where) {
@@ -89,13 +131,13 @@ public class SqlBuilder {
         return holder;
 
     }
-    
+
     /**
-     * 构造update
+     * build update sql with query parameter
      * 
      * @param obj
      * @param where
-     *            不允许为空
+     *            can not be empty
      * @return
      */
     public static SqlHolder buildUpdate(Object obj, Parameter param) {
@@ -104,7 +146,7 @@ public class SqlBuilder {
 
         StringBuilder sql = new StringBuilder();
         StringBuilder wheres = new StringBuilder();
-        
+
         sql.append("UPDATE ").append(tableName(obj)).append(" SET ");
 
         for (Field f : fields) {
@@ -112,10 +154,9 @@ public class SqlBuilder {
                 continue;
             }
             Object paramValue = convert(getValue(obj, f));
-            
-            //域值为空时，不作为自动更新项目
-            if (paramValue == null)
-            {
+
+            // if the value of field is empty, continue
+            if (paramValue == null) {
                 continue;
             }
             holder.addParam(paramValue);
@@ -123,10 +164,10 @@ public class SqlBuilder {
 
         }
         deleteLastComma(sql);
-        
+
         // iterate all parameters
         buildWheres(param, holder, wheres);
-        
+
         sql.append(" WHERE ");
         sql.append(StringUtils.isNotBlank(wheres.toString()) ? wheres : " ");
         holder.setSql(sql.toString());
@@ -134,7 +175,7 @@ public class SqlBuilder {
         return holder;
 
     }
-    
+
     /**
      * 构造delete
      * 
@@ -154,7 +195,7 @@ public class SqlBuilder {
         return holder;
 
     }
-    
+
     /**
      * 构造delete
      * 
@@ -169,28 +210,25 @@ public class SqlBuilder {
         StringBuilder where = new StringBuilder();
         buildWheres(param, holder, where);
         sql.append("DELETE FROM ").append(tableName(clazz));
-        sql.append(" WHERE ");
-        sql.append(StringUtils.isNotBlank(where.toString()) ? where : " ");
+        //sql.append(" WHERE ");
+        sql.append(StringUtils.isNotBlank(where.toString()) ? " WHERE " + where : " ");
         holder.setSql(sql.toString());
         logger.debug(holder);
         return holder;
 
     }
-    
-
 
     private static void buildWheres(Parameter param, SqlHolder holder, StringBuilder wheres) {
-        while (param != null)
-        {
+        while (param != null) {
             wheres.append(param.getColumnName()).append("=?").append(" and ");
             holder.addParam(param.getValue());
-            
+
             param = param.getNextParam();
-            
+
         }
         deleteLast(wheres, " and ");
     }
-    
+
     public static SqlHolder buildQuery(Class<?> clazz, Parameter param) {
         SqlHolder holder = new SqlHolder();
         Field[] fields = clazz.getDeclaredFields();
@@ -205,7 +243,7 @@ public class SqlBuilder {
             columns.append(columnName(f)).append(",");
         }
         deleteLastComma(columns);
-        
+
         // iterate all parameters
         buildWheres(param, holder, wheres);
 
@@ -217,7 +255,7 @@ public class SqlBuilder {
         return holder;
 
     }
-    
+
     public static SqlHolder buildQuery(Class<?> clazz, String wheres) {
         SqlHolder holder = new SqlHolder();
         Field[] fields = clazz.getDeclaredFields();
@@ -241,7 +279,6 @@ public class SqlBuilder {
 
     }
 
-    
     /**
      * 删除最后那个“,”
      * 
@@ -252,7 +289,7 @@ public class SqlBuilder {
             sb.deleteCharAt(sb.length() - 1);
         }
     }
-    
+
     /**
      * 删除最后一个指定的单词
      * 
@@ -266,7 +303,8 @@ public class SqlBuilder {
     }
 
     /**
-     * 获取列名<br/> MyBeanProcessor中定义了查询时从数据库字段转 -> po属性 的规则,<br />
+     * 获取列名<br/>
+     * MyBeanProcessor中定义了查询时从数据库字段转 -> po属性 的规则,<br />
      * 此处po属性 -> 数据库字段 的规则和前面保持一致
      * 
      * @see MyBeanProcessor#prop2column(String)
@@ -278,7 +316,7 @@ public class SqlBuilder {
     }
 
     /**
-     * 获取对象中某个属性的值(没有通过getter方法获取)
+     * get the value of objects.
      * 
      * @param obj
      * @param f
@@ -295,8 +333,8 @@ public class SqlBuilder {
                 f.setAccessible(false);
             }
         } catch (Exception e) {
-            logger.error("获取属性值失败！", e);
-            throw new RuntimeException("获取属性值失败！", e);
+            logger.error("Failed to get value of objects.", e);
+            throw new RuntimeException("Failed to get value of objects.", e);
         }
         return o;
     }
@@ -351,7 +389,7 @@ public class SqlBuilder {
         }
         return tableName;
     }
-    
+
     private static String tableName(Class<?> clazz) {
         String tableName = clazz.getSimpleName();
         Table table = clazz.getAnnotation(Table.class);
@@ -363,7 +401,7 @@ public class SqlBuilder {
 
     /**
      * 
-     * java类型转换成数据库类型
+     * convert java types 2 db types.
      * 
      * @param o
      * @return
