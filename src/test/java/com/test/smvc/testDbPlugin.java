@@ -16,18 +16,52 @@ import com.test.smvc.model.Grade;
 import com.test.smvc.model.Student;
 
 /**
- * TEST DB PLUGIN
+ * TEST
  * 
  * @author Big Martin
  *
  */
 public class testDbPlugin {
+	
+	private static C3P0Plugin dsPlugin;
+	
+	static{
+		//db property file
+		String FILE_NAME = "/db.properties";
+		
+		InputStream in = testDbPlugin.class.getResourceAsStream(FILE_NAME);
+		Properties property = new Properties();
+		try {
+			property.load(in);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		String jdbcUrl = property.getProperty("jdbc.url");
+		String user = property.getProperty("jdbc.username");
+		String password = property.getProperty("jdbc.password");
+		String driverClass = property.getProperty("jdbc.driverClassName");
+		int maxPoolSize = Integer.parseInt(property
+				.getProperty("maxPoolSize"));
+		int minPoolSize = Integer.parseInt(property
+				.getProperty("minPoolSize"));
+		int initialPoolSize = Integer.parseInt(property
+				.getProperty("initialPoolSize"));
+		int maxIdleTime = Integer.parseInt(property
+				.getProperty("maxIdleTime"));
+		int acquireIncrement = Integer.parseInt(property
+				.getProperty("acquireIncrement"));
+		
+		//init data source plugin
+		dsPlugin = new C3P0Plugin(jdbcUrl, user, password,
+				driverClass, maxPoolSize, minPoolSize, initialPoolSize,
+				maxIdleTime, acquireIncrement);
+	}
 
-/*	@Test
+	@Test
 	public void testAll() throws IllegalArgumentException,
 			IllegalAccessException {
-		DbPlugin<Student> studentDao = new DbPlugin<Student>();
-		DbPlugin<Grade> gradeDao = new DbPlugin<Grade>();
+		DbPlugin<Student> studentDao = new DbPlugin<Student>(dsPlugin);
+		DbPlugin<Grade> gradeDao = new DbPlugin<Grade>(dsPlugin);
 		Student stu = new Student("martin", "121", "TaiWan");
 
 		// query all users named martin
@@ -67,42 +101,18 @@ public class testDbPlugin {
 		Student student = studentDao.query(Student.class, param);
 		Assert.assertEquals("Nanjin", student.getSchool());
 
-	}*/
+	}
 
 	@Test
 	public void testQueryWithSql() throws IOException {
-		String FILE_NAME = "/db.properties";
-
-		InputStream in = DbPlugin.class.getResourceAsStream(FILE_NAME);
-		Properties property = new Properties();
-		property.load(in);
-		String jdbcUrl = property.getProperty("jdbc.url");
-		String user = property.getProperty("jdbc.username");
-		String password = property.getProperty("jdbc.password");
-		String driverClass = property.getProperty("jdbc.driverClassName");
-		int maxPoolSize = Integer.parseInt(property
-				.getProperty("maxPoolSize"));
-		int minPoolSize = Integer.parseInt(property
-				.getProperty("minPoolSize"));
-		int initialPoolSize = Integer.parseInt(property
-				.getProperty("initialPoolSize"));
-		int maxIdleTime = Integer.parseInt(property
-				.getProperty("maxIdleTime"));
-		int acquireIncrement = Integer.parseInt(property
-				.getProperty("acquireIncrement"));
 		
-		//init data source plugin
-		C3P0Plugin dsPlugin = new C3P0Plugin(jdbcUrl, user, password,
-				driverClass, maxPoolSize, minPoolSize, initialPoolSize,
-				maxIdleTime, acquireIncrement);
-
 		DbPlugin<Grade> gradeDao = new DbPlugin<Grade>(dsPlugin);
 
-		// query with
+		// query part of rows with sql, this feel good
 		List<Grade> gradesList = gradeDao
 				.queryListWithSql(
-						"select id, class_name, score from grade t where t.student_id = ?",
-						Grade.class, new Object[] { 1 });
+						"select id, class_name, score from grade t",
+						Grade.class);
 		Assert.assertTrue(gradesList.size() == 2);
 
 		Grade grade = gradeDao
