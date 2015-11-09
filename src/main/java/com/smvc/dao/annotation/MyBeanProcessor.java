@@ -56,10 +56,6 @@ public class MyBeanProcessor extends BeanProcessor {
         return result;
     }
 
-    public static void main(String[] args) {
-        System.out.println(prop2column("publishTimeAB"));
-    }
-
     @Override
     protected int[] mapColumnsToProperties(ResultSetMetaData rsmd,
             PropertyDescriptor[] props) throws SQLException {
